@@ -23,51 +23,65 @@
 *  @copyright  2017
 */
 
+
 if (!defined('_PS_VERSION_')) {
     exit;
 }
-use Prestashop\Prestashop\Core\Module\WidgetInterface;
+
+use PrestaShop\PrestaShop\Core\Module\WidgetInterface;
 
 class helloWord extends Module implements WidgetInterface
 {
     public function __construct()
     {
-        $this->name = "HelloWord";
+        $this->name = "helloWord";
         $this->version = "1.0.0";
         $this->author = "JLCW"; 
+        $this->need_instance = 1; 
         $this->bootstrap = true;
-        $this->controllers = array('default');
-        $this->parent::construct();
         
-        $this->displayName = "Hello Word";
+        // ne sert a declarer que les controllers front, va chercher par defaut le fichier siuvant : 
+        //          modules\helloword\views\templates\front
+        $this->controllers = array('default'); 
+        parent::__construct();
+
+        $this->displayName = "Hello World";
         $this->description = "first module with controller";
     }
     
     public function install() 
     {
-        include_once dirname(__FILE__) . 'controllers/admin/adminhellowordController.php';
+        include_once dirname(__FILE__) . '\controllers\admin\adminHellowordController.php'; //include admin controller
         
-        if (Shop::isFeaturedActive()) {
-            Shop::setContext(Shop::CONTEXT_ALL);
-        }
+//        if (Shop::isFeaturedActive()) {
+//            Shop::setContext(Shop::CONTEXT_ALL);
+//        }
         
         if (!parent::install() 
                 || !$this->registerHook('displayLeftColumn') 
                 || !$this->registerHook('displayHeader')
-                || !AdminHelloWordController::installInBo($this->l('helloword'))
-                || !Configuration::updateValue('HELLO_WORD')
-                ) {
+                || !adminHellowordController::installInBo($this->l('helloword'))
+                || !Configuration::updateValue('HELLO_WORD', 'bonjour')
+            ) {
             return false;
+        } else {
+            return true;
         }
     }
     
-    public function setMedia() {
-        
+    public function uninstall() {
+        return (parent::uninstall() && AdminHelloWordController::removeFromBO());
     }
-    
+
+    public function getContent()
+    {
+        $outpout = 'hello you';
+        return $outpout;
+    }
+
     public function hookDisplayHeader($params) 
     {
-        
+        $this->context->controller->registerStylesheet('modules-helloword', '/views/assets/css/style.css', ['position' => 'top']);
     }
     
     public function hookDisplayLeftColumn($params) 
@@ -75,12 +89,14 @@ class helloWord extends Module implements WidgetInterface
         
     }
     
-    public function renderWidget ($hookname, array $params) {
-        $this->context->smarty->assign(content);
-        return $this->fetch('module:helloword/views/templates/front/default.tpl');
+    public function renderWidget($hookName = null, array $configuration = [])
+    {
+        $this->smarty->assign($this->getWidgetVariables($hookname, $params));
+        return $this->fetch('module:helloword/views/templates/hook/helloword.tpl');
     }
-    
-    public function getWidgetVariables ($hookname, array $params) {
 
+    public function getWidgetVariables($hookName = null, array $configuration = [])
+    {
+        return array('content' => Configuration::getValue('HELLO_WORD'));
     }
 }
