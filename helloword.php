@@ -53,28 +53,21 @@ class helloWord extends Module implements WidgetInterface
     {
         include_once dirname(__FILE__) . '\controllers\admin\adminHellowordController.php'; //include admin controller
         
-//        if (Shop::isFeaturedActive()) {
-//            Shop::setContext(Shop::CONTEXT_ALL);
-//        }
-        
-        if (!parent::install() 
-                || !$this->registerHook('displayLeftColumn') 
-                || !$this->registerHook('displayHeader')
-                || !adminHellowordController::installInBo($this->l('helloword'))
-                || !Configuration::updateValue('HELLO_WORD', 'bonjour')
-            ) {
-            return false;
-        } else {
-            return true;
-        }
+        return (parent::install() 
+                && $this->registerHook('displayLeftColumn') 
+                && $this->registerHook('displayHeader') 
+                && adminHellowordController::installInBo($this->l('helloword')) 
+                && Configuration::updateValue('HELLO_WORD', 'bonjour'));
     }
     
     public function uninstall() {
-        return (parent::uninstall() && AdminHelloWordController::removeFromBO());
+        return (parent::uninstall() 
+                && AdminHelloWordController::removeFromBO());
     }
 
     public function getContent()
     {
+        //configuration 
         $outpout = 'hello you';
         return $outpout;
     }
@@ -89,14 +82,23 @@ class helloWord extends Module implements WidgetInterface
         
     }
     
-    public function renderWidget($hookName = null, array $configuration = [])
+    public function renderWidget($hookName = null, array $params = [])
     {
-        $this->smarty->assign($this->getWidgetVariables($hookname, $params));
-        return $this->fetch('module:helloword/views/templates/hook/helloword.tpl');
+        //twig generator render
+        $twigEnvironment = new Twig_Environment(new Twig_Loader_Filesystem(__DIR__ . '/views'));
+        return $twigEnvironment->render('sample.html.twig', array(
+            'var_1' => 'test',
+            'hello_url' => Context::getContext()->link->getModuleLink('helloword', 'default')
+            )
+        );
+
+        // classic smarty generator render
+        //$this->smarty->assign($this->getWidgetVariables($hookName, $params));
+        //return $this->fetch('module:helloword/views/templates/hook/helloword.tpl');
     }
 
-    public function getWidgetVariables($hookName = null, array $configuration = [])
+    public function getWidgetVariables($hookName = null, array $params = [])
     {
-        return array('content' => Configuration::getValue('HELLO_WORD'));
+        return array('content' => Configuration::get('HELLO_WORD'));
     }
 }
